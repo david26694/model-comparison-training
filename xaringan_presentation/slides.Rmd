@@ -95,10 +95,12 @@ $$auc = b_0 + b_1 m_1 + b_2 m_2$$
 library(dplyr)
 library(tidyr)
 library(ggplot2)
+theme_set(theme_minimal())
 ```
 
 ```{r eval=TRUE, tidy=TRUE}
 
+# Convert dataframe from wide to long
 anova_df <- aucs %>% 
   gather(model, value, -id)
 
@@ -121,8 +123,7 @@ anova_df %>%
              y = value, 
              group = id, 
              color = id)) + 
-  geom_line() + 
-  theme_minimal()
+  geom_line() 
 ```
 ]
 
@@ -137,7 +138,7 @@ anova_df %>%
 
 Linear model
 
-$$ y_i = b_0 + b_1x_i + e_i $$
+$$y_i=b_0+b_1x_i+e_i$$
 
 Random intercepts model
 
@@ -225,17 +226,22 @@ Three probabilities:
 
 library(tidyposterior)
 
+# Model and generate posteriors
 bayesian_lm <- perf_mod(aucs, transform = logit_trans)
 
+# Compare posteriors
 bayesian_comparison <- contrast_models(bayesian_lm)
 
 ```
 
 ```{r eval=TRUE, include = FALSE }
+
 library(tidyposterior)
 
+# Model and generate posteriors
 bayesian_lm <- perf_mod(aucs, transform = logit_trans)
 
+# Compare posteriors
 bayesian_comparison <- contrast_models(bayesian_lm)
 
 ```
@@ -247,8 +253,7 @@ bayesian_comparison <- contrast_models(bayesian_lm)
 
 .pull-left[
 ```{r plot-label-2, eval=FALSE}
-ggplot(tidy(bayesian_lm)) + 
-  theme_minimal()
+ggplot(tidy(bayesian_lm))
 ```
 ]
 
@@ -261,8 +266,11 @@ ggplot(tidy(bayesian_lm)) +
 
 ```{r}
 
+# ROPE = 1%
 summary(bayesian_comparison, size = 0.01) %>% 
   select(contrast, pract_neg, pract_equiv, pract_pos)
+
+# ROPE = 3%
 summary(bayesian_comparison, size = 0.03) %>% 
   select(contrast, pract_neg, pract_equiv, pract_pos)
 
@@ -270,8 +278,15 @@ summary(bayesian_comparison, size = 0.03) %>%
 ---
 
 ```{r}
-ggplot(bayesian_comparison, size = 0.01) + theme_minimal()
+# ROPE = 1%
+ggplot(bayesian_comparison, size = 0.01)
+```
 
+---
+
+```{r}
+# ROPE = 3%
+ggplot(bayesian_comparison, size = 0.03)
 ```
 
 
