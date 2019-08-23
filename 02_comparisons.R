@@ -38,5 +38,4 @@ summary(bayesian_comparison, size = 0.01)
 summary(bayesian_comparison, size = 0.03)
 
 ggplot(bayesian_comparison, size = 0.01) + theme_minimal()
-ggplot(bayesian_comparison, size = 0.01) + theme_xkcd()
 ggplot(bayesian_comparison, size = 0.03) + theme_minimal()
