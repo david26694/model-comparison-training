@@ -1,0 +1,6 @@
+Questions
+
+* Bayesian test?
+* Prior?
+* Decision of ROPE?
+* Check what to do after anova

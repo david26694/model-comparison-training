@@ -8,6 +8,7 @@ load(file = 'data/aucs.RData')
 # Paired t-test -------------------------------------------------------------------------------
 
 # Paired t test finds differences
+t.test(aucs$roc_auc_xgb, aucs$roc_auc_rf, paired = T)
 t.test(aucs$roc_auc_xgb, aucs$roc_auc_lasso, paired = T)
 
 # Anova ---------------------------------------------------------------------------------------
@@ -15,8 +16,9 @@ t.test(aucs$roc_auc_xgb, aucs$roc_auc_lasso, paired = T)
 anova_df <- aucs %>% 
   gather(model, value, -id)
 
-
 # Anova finds differences
+anova(lm(value ~ model, anova_df))
+
 summary(lm(value ~ model, anova_df))
 
 anova_df %>% 
@@ -33,5 +35,7 @@ bayesian_comparison <- contrast_models(bayesian_lm)
 ggplot(tidy(bayesian_lm)) + theme_minimal()
 
 summary(bayesian_comparison, size = 0.01)
+summary(bayesian_comparison, size = 0.03)
 
 ggplot(bayesian_comparison, size = 0.01) + theme_minimal()
+ggplot(bayesian_comparison, size = 0.03) + theme_minimal()

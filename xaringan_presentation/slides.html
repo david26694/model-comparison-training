@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+  <head>
+    <title>Bayesian Model Comparison</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="David Masip" />
+    <link href="libs/remark-css-0.0.1/default.css" rel="stylesheet" />
+    <link href="libs/remark-css-0.0.1/default-fonts.css" rel="stylesheet" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Bayesian Model Comparison
+### David Masip
+### Pagantis
+### 2019/09/18 (updated: 2019-08-23)
+
+---
+
+
+## Problem formulation
+
+Given two models trained on the same dataset, we want to assess which one is better according to a given metric.
+
+Requirements:
+* We should not use test set to assess.
+* We should embrace uncertainty.
+
+Solution: metric in cross-validation folds ([trust your local cv](http://www.chioka.in/how-to-select-your-final-models-in-a-kaggle-competitio/)).
+
+???
+
+- Model doesn't imply ml model -&gt; it can imply using different featrues, a more regularized version of the same model
+
+---
+
+## Example
+
+Throughout the session we'll be using OK Cupid data.
+
+
+```r
+head(recipes::okc)
+```
+
+```
+## # A tibble: 6 x 6
+##     age diet              height location            date       Class
+##   &lt;int&gt; &lt;chr&gt;              &lt;int&gt; &lt;chr&gt;               &lt;date&gt;     &lt;fct&gt;
+## 1    22 strictly anything     75 south san francisco 2012-06-28 other
+## 2    35 mostly other          70 oakland             2012-06-29 other
+## 3    38 anything              68 san francisco       2012-06-27 other
+## 4    23 vegetarian            71 berkeley            2012-06-28 other
+## 5    29 &lt;NA&gt;                  66 san francisco       2012-06-27 other
+## 6    29 mostly anything       67 san francisco       2012-06-29 stem
+```
+
+---
+
+## Example (continuation)
+
+Basic feature engineering (one hot encoding, date parsing).
+Lasso, Xgboost and random forest trained.
+
+
+```r
+load(file = "../data/aucs.RData")
+
+aucs
+```
+
+```
+## # A tibble: 10 x 4
+##    id     roc_auc_xgb roc_auc_lasso roc_auc_rf
+##    &lt;chr&gt;        &lt;dbl&gt;         &lt;dbl&gt;      &lt;dbl&gt;
+##  1 Fold01       0.659         0.648      0.652
+##  2 Fold02       0.666         0.632      0.660
+##  3 Fold03       0.662         0.629      0.652
+##  4 Fold04       0.648         0.636      0.647
+##  5 Fold05       0.657         0.630      0.653
+##  6 Fold06       0.661         0.628      0.654
+##  7 Fold07       0.654         0.646      0.648
+##  8 Fold08       0.642         0.625      0.634
+##  9 Fold09       0.643         0.617      0.629
+## 10 Fold10       0.660         0.631      0.653
+```
+
+
+
+---
+
+## Frequentist methods 1: paired t-test
+
+- Doesn't account for correlation among folds (test considers sample independent).
+
+
+```r
+t.test(aucs$roc_auc_xgb, aucs$roc_auc_rf, paired = T)
+```
+
+```
+## 
+## 	Paired t-test
+## 
+## data:  aucs$roc_auc_xgb and aucs$roc_auc_rf
+## t = 6.3989, df = 9, p-value = 0.0001254
+## alternative hypothesis: true difference in means is not equal to 0
+## 95 percent confidence interval:
+##  0.004615056 0.009662469
+## sample estimates:
+## mean of the differences 
+##             0.007138762
+```
+
+---
+
+## Frequentist methods 1: paired t-test (continuation)
+
+
+```r
+t.test(aucs$roc_auc_xgb, aucs$roc_auc_lasso, paired = T)
+```
+
+```
+## 
+## 	Paired t-test
+## 
+## data:  aucs$roc_auc_xgb and aucs$roc_auc_lasso
+## t = 7.2409, df = 9, p-value = 4.864e-05
+## alternative hypothesis: true difference in means is not equal to 0
+## 95 percent confidence interval:
+##  0.01579726 0.03015267
+## sample estimates:
+## mean of the differences 
+##              0.02297496
+```
+---
+
+
+## Frequentist methods 2: Correlated t-test
+
+Paired t-test that accounts for the correlation between samples (Nadeau and Bengio, 2003).
+
+- Correlation parameter is estimated through an heuristic.
+
+---
+
+## Frequentist methods 3: ANOVA
+
+`$$auc = b_0 + b_1 m_1 + b_2 m_2$$`
+
+- Can compare multiple models.
+- Doesn't account for correlation.
+
+---
+
+## Frequentist methods 3: ANOVA (continuation)
+
+
+
+
+```r
+anova_df &lt;- aucs %&gt;% gather(model, value, -id)
+
+
+# Anova finds differences
+anova(lm(value ~ model, anova_df))
+```
+
+```
+## Analysis of Variance Table
+## 
+## Response: value
+##           Df    Sum Sq    Mean Sq F value    Pr(&gt;F)    
+## model      2 0.0027653 0.00138266  16.942 1.709e-05 ***
+## Residuals 27 0.0022035 0.00008161                      
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+```
+
+---
+
+## Correlated structure!
+
+- Fold 1 and 2 are "easy".
+- Fold 8 and 9 are "hard".
+
+.pull-left[
+
+```r
+anova_df %&gt;% 
+  ggplot(aes(x = model, 
+             y = value, 
+             group = id, 
+             color = id)) + 
+  geom_line() + 
+  theme_minimal()
+```
+]
+
+.pull-right[
+![](slides_files/figure-html/plot-label-out-1.png)&lt;!-- --&gt;
+]
+
+---
+
+## Solution: random intercepts
+
+Linear model
+
+$$ y_i = b_0 + b_1x_i + e_i $$
+
+Random intercepts model
+
+`$$y_{ij}=b_0+b_1x_{ij}+u_j+e_i$$`
+
+
+
+Not same as dummy variables, `\(u\)` is a random variable.
+
+
+---
+
+## Frequentist pitfalls (Benavoli et al, 2017)
+
+
+p-value is not what we want to estimate
+
+![](images/hypothesis.png)
+
+---
+
+## Frequentist pitfalls (Benavoli et al, 2017)
+
+
+p-value depends on sample size
+
+![](images/size.png)
+
+---
+
+## Frequentist pitfalls (Benavoli et al, 2017)
+
+
+p-value ignores magnitude
+
+![](images/uncertainty.png)
+
+---
+
+## Bayesian methods 
+
+Methods:
+- Correlated t-test (Benavoli et al., 2017): (when number of samples grow, it tends to the frequentist t-test).
+- ANOVA with random intercepts: [tidyposterior](https://tidymodels.github.io/tidyposterior/index.html) and [Max Kuhn talk](https://www.youtube.com/watch?v=MJdsnJCWIuA&amp;t=853s).
+Output: we obtain posterior distributions of the metric, and posterior distributions of the metric differences.
+
+
+---
+
+## Practical differences
+
+- Region of practical equivalence (ROPE): range of values of the metrics’ difference where we think the models as equivalent (definition left to the modeller).
+- Classification: classifiers whose difference in metric (auc, accuracy, f1) is less than 1% are usually thought as equivalent. The ROPE is then [-0.01, 0.01].
+
+
+---
+
+## Practical differences regions
+
+
+Three probabilities:
+- `\(P(m1 &gt;&gt; m2)\)`
+- `\(P(m1 = m2)\)` (practically)
+- `\(P(m1 &lt;&lt; m2)\)`
+
+
+
+  ![](images/rope.png)
+
+
+---
+
+## Bayesian pitfalls
+
+- Choosing priors
+- Defining ROPE
+- End up thinking black and white-ish.
+
+
+---
+
+## Bayesian comparison
+
+
+```r
+library(tidyposterior)
+
+bayesian_lm &lt;- perf_mod(aucs, transform = logit_trans)
+
+bayesian_comparison &lt;- contrast_models(bayesian_lm)
+```
+
+
+
+
+---
+
+## Plot differences
+
+.pull-left[
+
+```r
+ggplot(tidy(bayesian_lm)) + 
+  theme_minimal()
+```
+]
+
+.pull-right[
+![](slides_files/figure-html/plot-label-2-out-1.png)&lt;!-- --&gt;
+]
+
+---
+
+
+```r
+summary(bayesian_comparison, size = 0.01) %&gt;% 
+  select(contrast, pract_neg, pract_equiv, pract_pos)
+```
+
+```
+## # A tibble: 3 x 4
+##   contrast                     pract_neg pract_equiv pract_pos
+##   &lt;chr&gt;                            &lt;dbl&gt;       &lt;dbl&gt;     &lt;dbl&gt;
+## 1 roc_auc_lasso vs roc_auc_rf      0.978      0.0217     0    
+## 2 roc_auc_xgb vs roc_auc_lasso     0          0          1    
+## 3 roc_auc_xgb vs roc_auc_rf        0          0.861      0.139
+```
+
+```r
+summary(bayesian_comparison, size = 0.03) %&gt;% 
+  select(contrast, pract_neg, pract_equiv, pract_pos)
+```
+
+```
+## # A tibble: 3 x 4
+##   contrast                     pract_neg pract_equiv pract_pos
+##   &lt;chr&gt;                            &lt;dbl&gt;       &lt;dbl&gt;     &lt;dbl&gt;
+## 1 roc_auc_lasso vs roc_auc_rf          0       1       0      
+## 2 roc_auc_xgb vs roc_auc_lasso         0       0.995   0.00525
+## 3 roc_auc_xgb vs roc_auc_rf            0       1       0
+```
+---
+
+
+```r
+ggplot(bayesian_comparison, size = 0.01) + theme_minimal()
+```
+
+![](slides_files/figure-html/unnamed-chunk-10-1.png)&lt;!-- --&gt;
+
+```r
+# ggplot(bayesian_comparison, size = 0.03) + theme_minimal()
+```
+
+
+---
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();</script>
+
+<script>
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
