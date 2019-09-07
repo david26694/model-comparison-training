@@ -14,10 +14,18 @@ class: center, middle, inverse, title-slide
 # Bayesian Model Comparison
 ### David Masip
 ### Pagantis
-### 2019/09/18 (updated: 2019-08-23)
+### 2019/09/18 (updated: 2019-09-07)
 
 ---
 
+
+## Introduction
+
+* Problem to solve.
+* Frequentist methods.
+* Bayesian methods.
+
+---
 
 ## Problem formulation
 
@@ -31,7 +39,7 @@ Solution: metric in cross-validation folds ([trust your local cv](http://www.chi
 
 ???
 
-- Model doesn't imply ml model -&gt; it can imply using different featrues, a more regularized version of the same model
+- Model doesn't imply ml algorithm -&gt; it can imply using different featrues, a more regularized version of the same model
 
 ---
 
@@ -86,7 +94,11 @@ aucs
 ## 10 Fold10       0.660         0.631      0.653
 ```
 
+---
 
+## Disclaimer
+
+I'm not a bayesian fan-boy.
 
 ---
 
@@ -161,6 +173,7 @@ Paired t-test that accounts for the correlation between samples (Nadeau and Beng
 
 
 ```r
+# Convert dataframe from wide to long
 anova_df &lt;- aucs %&gt;% gather(model, value, -id)
 
 
@@ -208,7 +221,7 @@ anova_df %&gt;%
 
 Linear model
 
-$$ y_i = b_0 + b_1x_i + e_i $$
+`$$y_i=b_0+b_1x_i+e_i$$`
 
 Random intercepts model
 
@@ -296,8 +309,10 @@ Three probabilities:
 ```r
 library(tidyposterior)
 
+# Model and generate posteriors
 bayesian_lm &lt;- perf_mod(aucs, transform = logit_trans)
 
+# Compare posteriors
 bayesian_comparison &lt;- contrast_models(bayesian_lm)
 ```
 
@@ -323,6 +338,7 @@ ggplot(tidy(bayesian_lm))
 
 
 ```r
+# ROPE = 1%
 summary(bayesian_comparison, size = 0.01) %&gt;% 
   select(contrast, pract_neg, pract_equiv, pract_pos)
 ```
@@ -331,12 +347,13 @@ summary(bayesian_comparison, size = 0.01) %&gt;%
 ## # A tibble: 3 x 4
 ##   contrast                     pract_neg pract_equiv pract_pos
 ##   &lt;chr&gt;                            &lt;dbl&gt;       &lt;dbl&gt;     &lt;dbl&gt;
-## 1 roc_auc_lasso vs roc_auc_rf      0.976      0.0242     0    
-## 2 roc_auc_xgb vs roc_auc_lasso     0          0          1    
-## 3 roc_auc_xgb vs roc_auc_rf        0          0.870      0.130
+## 1 roc_auc_lasso vs roc_auc_rf      0.973       0.027     0    
+## 2 roc_auc_xgb vs roc_auc_lasso     0           0         1    
+## 3 roc_auc_xgb vs roc_auc_rf        0           0.853     0.147
 ```
 
 ```r
+# ROPE = 3%
 summary(bayesian_comparison, size = 0.03) %&gt;% 
   select(contrast, pract_neg, pract_equiv, pract_pos)
 ```
@@ -345,14 +362,15 @@ summary(bayesian_comparison, size = 0.03) %&gt;%
 ## # A tibble: 3 x 4
 ##   contrast                     pract_neg pract_equiv pract_pos
 ##   &lt;chr&gt;                            &lt;dbl&gt;       &lt;dbl&gt;     &lt;dbl&gt;
-## 1 roc_auc_lasso vs roc_auc_rf          0       1        0     
-## 2 roc_auc_xgb vs roc_auc_lasso         0       0.992    0.0075
-## 3 roc_auc_xgb vs roc_auc_rf            0       1        0
+## 1 roc_auc_lasso vs roc_auc_rf    0.00025       1.000    0     
+## 2 roc_auc_xgb vs roc_auc_lasso   0             0.990    0.0105
+## 3 roc_auc_xgb vs roc_auc_rf      0             1        0
 ```
 ---
 
 
 ```r
+# ROPE = 1%
 ggplot(bayesian_comparison, size = 0.01)
 ```
 
@@ -360,14 +378,21 @@ ggplot(bayesian_comparison, size = 0.01)
 
 ---
 
----
-
 
 ```r
+# ROPE = 3%
 ggplot(bayesian_comparison, size = 0.03)
 ```
 
 ![](slides_files/figure-html/unnamed-chunk-11-1.png)&lt;!-- --&gt;
+
+
+---
+
+
+## Thanks
+
+![](images/tweet.png)
 
 
 ---

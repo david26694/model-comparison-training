@@ -13,6 +13,14 @@ output:
       countIncrementalSlides: false
 ---
 
+## Introduction
+
+* Problem to solve.
+* Frequentist methods.
+* Bayesian methods.
+
+---
+
 ## Problem formulation
 
 Given two models trained on the same dataset, we want to assess which one is better according to a given metric.
@@ -25,7 +33,7 @@ Solution: metric in cross-validation folds ([trust your local cv](http://www.chi
 
 ???
 
-- Model doesn't imply ml model -> it can imply using different featrues, a more regularized version of the same model
+- Model doesn't imply ml algorithm -> it can imply using different featrues, a more regularized version of the same model
 
 ---
 
@@ -50,7 +58,11 @@ load(file = '../data/aucs.RData')
 aucs
 ```
 
+---
 
+## Disclaimer
+
+I'm not a bayesian fan-boy.
 
 ---
 
@@ -288,6 +300,14 @@ ggplot(bayesian_comparison, size = 0.01)
 # ROPE = 3%
 ggplot(bayesian_comparison, size = 0.03)
 ```
+
+
+---
+
+
+## Thanks
+
+![](images/tweet.png)
 
 
 ---
