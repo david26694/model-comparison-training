@@ -1,6 +1,15 @@
 Questions
 
-* Bayesian test?
-* Prior?
-* Decision of ROPE?
-* Check what to do after anova
+* Bayesian test? -> 
+
+Simplement, tenim posterior(mu), si P(posterior(mu) > 0) > 0.95, rebutgem
+
+"the probability of the bayesian t-test and p-value of the frequentist t-test are numerically equivalent"
+
+* Quin Prior fem servir? Mirar codi tidyposterior, normal es autoconjugate. betabinomial es conjugate de proporcions
+
+* Decision of ROPE? Depends on the business
+
+
+* Check what to do after anova -> Tukey test
+

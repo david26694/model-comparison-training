@@ -1,9 +1,9 @@
 ---
-title: "Bayesian Model Comparison"
-subtitle: ""
+title: "ML Models Comparison"
+subtitle: "github.com/david26694/model-comparison-training"
 author: "David Masip"
 institute: "Pagantis"
-date: "2019/09/18 (updated: `r Sys.Date()`)"
+date: "2019/09/16"
 output:
   xaringan::moon_reader:
     lib_dir: libs
@@ -11,13 +11,20 @@ output:
       highlightStyle: github
       highlightLines: true
       countIncrementalSlides: false
+      titleSlideClass: [center, middle]
+      
 ---
 
 ## Introduction
 
-* Problem to solve.
-* Frequentist methods.
-* Bayesian methods.
+
+- Problem description and approach.
+
+- Frequentist methods and criticism.
+
+- Bayesian methods and criticism.
+
+- tidyposterior examples.
 
 ---
 
@@ -26,14 +33,17 @@ output:
 Given two models trained on the same dataset, we want to assess which one is better according to a given metric.
 
 Requirements:
-* We should not use test set to assess.
-* We should embrace uncertainty.
+
+- We should not use test set to assess.
+
+- We should embrace uncertainty.
 
 Solution: metric in cross-validation folds ([trust your local cv](http://www.chioka.in/how-to-select-your-final-models-in-a-kaggle-competitio/)).
 
 ???
 
 - Model doesn't imply ml algorithm -> it can imply using different featrues, a more regularized version of the same model
+- Use same folds!
 
 ---
 
@@ -60,15 +70,9 @@ aucs
 
 ---
 
-## Disclaimer
-
-I'm not a bayesian fan-boy.
-
----
-
 ## Frequentist methods 1: paired t-test
 
-- Doesn't account for correlation among folds (test considers sample independent).
+- Doesn't account for correlation among folds (test considers independent samples).
 
 ```{r eval=TRUE, tidy=TRUE}
 t.test(aucs$roc_auc_xgb, aucs$roc_auc_rf, paired = T)
@@ -88,6 +92,8 @@ t.test(aucs$roc_auc_xgb, aucs$roc_auc_lasso, paired = T)
 
 Paired t-test that accounts for the correlation between samples (Nadeau and Bengio, 2003).
 
+- There is no unbiased estimator for the correlation.
+
 - Correlation parameter is estimated through an heuristic.
 
 ---
@@ -97,6 +103,7 @@ Paired t-test that accounts for the correlation between samples (Nadeau and Beng
 $$auc = b_0 + b_1 m_1 + b_2 m_2$$
 
 - Can compare multiple models.
+
 - Doesn't account for correlation.
 
 ---
@@ -126,6 +133,7 @@ anova(lm(value ~ model, anova_df))
 ## Correlated structure!
 
 - Fold 1 and 2 are "easy".
+
 - Fold 8 and 9 are "hard".
 
 .pull-left[
@@ -135,7 +143,12 @@ anova_df %>%
              y = value, 
              group = id, 
              color = id)) + 
-  geom_line() 
+  geom_line() +
+  theme(
+    text = element_text(
+      size = 20
+      )
+  )
 ```
 ]
 
@@ -160,6 +173,14 @@ $$y_{ij}=b_0+b_1x_{ij}+u_j+e_i$$
 
 Not same as dummy variables, $u$ is a random variable.
 
+???
+
+Random intercepts -> cole, notes i examen nacional
+
+---
+class: center, middle
+
+# Disclaimer: I'm not a frequentist hater.
 
 ---
 
@@ -190,10 +211,21 @@ p-value ignores magnitude
 
 ---
 
+## Bayesian introduction
+
+- Frequentist methods: the parameter has a true value, we estimate it via maximum likelihood or other methods.
+
+- Bayesian methods: the parameter has a distribution of possible values. We have prior knowledge, and update the distribution according to the data.
+
+
+---
+
 ## Bayesian methods 
 
 Methods:
-- Correlated t-test (Benavoli et al., 2017): (when number of samples grow, it tends to the frequentist t-test).
+
+- Correlated t-test (Benavoli et al., 2017): _the probability of the bayesian t-test and p-value of the frequentist t-test are numerically equivalent_.
+
 - ANOVA with random intercepts: [tidyposterior](https://tidymodels.github.io/tidyposterior/index.html) and [Max Kuhn talk](https://www.youtube.com/watch?v=MJdsnJCWIuA&t=853s).
 Output: we obtain posterior distributions of the metric, and posterior distributions of the metric differences.
 
@@ -202,8 +234,13 @@ Output: we obtain posterior distributions of the metric, and posterior distribut
 
 ## Practical differences
 
-- Region of practical equivalence (ROPE): range of values of the metrics’ difference where we think the models as equivalent (definition left to the modeller).
+.middle[
+  
+  - Region of practical equivalence (ROPE): range of values of the metrics’ difference where we think the models as equivalent (definition left to the modeller).
+
 - Classification: classifiers whose difference in metric (auc, accuracy, f1) is less than 1% are usually thought as equivalent. The ROPE is then [-0.01, 0.01].
+
+]
 
 
 ---
@@ -213,7 +250,9 @@ Output: we obtain posterior distributions of the metric, and posterior distribut
 
 Three probabilities:
 - $P(m1 >> m2)$
+
 - $P(m1 = m2)$ (practically)
+
 - $P(m1 << m2)$
 
 
@@ -226,7 +265,9 @@ Three probabilities:
 ## Bayesian pitfalls
 
 - Choosing priors
+
 - Defining ROPE
+
 - End up thinking black and white-ish.
 
 
@@ -308,6 +349,21 @@ ggplot(bayesian_comparison, size = 0.03)
 ## Thanks
 
 ![](images/tweet.png)
+
+
+---
+
+
+## References 
+
+- Inference for the Generalization Error (Nadeau and Bengio, 2003).
+
+- Time for a Change: a Tutorial for Comparing Multiple Classifiers Through Bayesian Analysis (Benavoli et al, 2017).
+
+- Comparing posteriors: Estimating Practical Differences Between Models (Max Kuhn, 2018 New York R Conference).
+
+- tidyposterior package.
+
 
 
 ---

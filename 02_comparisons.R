@@ -24,7 +24,8 @@ summary(lm(value ~ model, anova_df))
 anova_df %>% 
   ggplot(aes(x = model, y = value, group = id, color = id)) + 
   geom_line() + 
-  theme_minimal()
+  theme_minimal() +
+  theme(text = element_text(size=15))
 
 # Tidyposterior -------------------------------------------------------------------------------
 
