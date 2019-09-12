@@ -23,13 +23,13 @@ class: center, middle, title-slide
 ## Introduction
 
 
-- Problem description and approach.
+- Problem description and approach
 
-- Frequentist methods and criticism.
+- Frequentist and bayesian methods
 
-- Bayesian methods and criticism.
+- Criticism
 
-- Examples.
+- tidyposterior examples
 
 ---
 
@@ -43,12 +43,15 @@ Requirements:
 
 - We should embrace uncertainty.
 
-Solution: metric in cross-validation folds ([trust your local cv](http://www.chioka.in/how-to-select-your-final-models-in-a-kaggle-competitio/)).
+Solution: 
+
+- Metric in cross-validation folds ([trust your local cv](http://www.chioka.in/how-to-select-your-final-models-in-a-kaggle-competitio/)). 
+
+- **Always use the same folds.**
 
 ???
 
 - Model doesn't imply ml algorithm -&gt; it can imply using different featrues, a more regularized version of the same model
-- Use same folds!
 
 ---
 
@@ -72,6 +75,10 @@ head(recipes::okc)
 ## 5    29 &lt;NA&gt;                  66 san francisco       2012-06-27 other
 ## 6    29 mostly anything       67 san francisco       2012-06-29 stem
 ```
+
+???
+
+science, technology, engineering and mathematics
 
 ---
 
@@ -167,9 +174,13 @@ Paired t-test that accounts for the correlation between samples (Nadeau and Beng
 
 `$$auc = b_0 + b_1 m_1 + b_2 m_2$$`
 
+- Uses models to compare models.
+
 - Can compare multiple models.
 
 - Doesn't account for correlation.
+
+- Doesn't answer *Which models are different?*
 
 ---
 
@@ -202,30 +213,10 @@ anova(lm(value ~ model, anova_df))
 
 ## Correlated structure!
 
-- Fold 1 and 2 are "easy".
+- Folds 1 and 2 are easy.
+- Folds 8 and 9 are hard.
 
-- Fold 8 and 9 are "hard".
-
-.pull-left[
-
-```r
-anova_df %&gt;% 
-  ggplot(aes(x = model, 
-             y = value, 
-             group = id, 
-             color = id)) + 
-  geom_line() +
-  theme(
-    text = element_text(
-      size = 20
-      )
-  )
-```
-]
-
-.pull-right[
-![](slides_files/figure-html/plot-label-out-1.png)&lt;!-- --&gt;
-]
+![](slides_files/figure-html/unnamed-chunk-7-1.png)&lt;!-- --&gt;
 
 ---
 
@@ -243,19 +234,36 @@ Random intercepts model
 
 Not same as dummy variables, `\(u\)` is a random variable.
 
+???
+
+Random intercepts -&gt; cole, notes i examen nacional
+
+---
+
+## Bayesian methods 
+
+Methods:
+
+- Correlated t-test (Benavoli et al., 2017): _the probability of the bayesian t-test and p-value of the frequentist t-test are numerically equivalent_.
+
+- ANOVA with random intercepts: [tidyposterior](https://tidymodels.github.io/tidyposterior/index.html) and [Max Kuhn talk](https://www.youtube.com/watch?v=MJdsnJCWIuA&amp;t=853s).
+Output: we obtain posterior distributions of the metric, and posterior distributions of the metric differences.
+
 ---
 class: center, middle
 
-# Disclaimer: I'm not a frequentist hater.
+# Disclaimer: I'm not a bayesian activist.
 
 ---
 
-## Frequentist pitfalls (Benavoli et al, 2017)
+## Bayesian/frequentist differences
 
+- Frequentist methods: We assume both methods are equal have the same AUC and compute
+$$P(x | AUC_1 = AUC_2) $$
 
-p-value is not what we want to estimate
-
-![](images/hypothesis.png)
+- Bayesian methods: the parameter has a distribution of possible values. We have prior knowledge, and update the distribution according to the data. In our case,
+$$P(AUC_1 - AUC_2 | x) $$
+This is what we want to estimate!
 
 ---
 
@@ -275,66 +283,21 @@ p-value ignores magnitude
 
 ![](images/uncertainty.png)
 
----
-
-## Bayesian 101
-
-- Frequentist methods: the parameter has a true value, we estimate it via maximum likelihood or other methods.
-
-- Bayesian methods: the parameter has a distribution of possible values. We have prior knowledge, and update the distribution according to the data.
-
 
 ---
 
-## Bayesian methods 
+## Region of practical equivalence
 
-Methods:
+ROPE: range of values of the metrics’ difference where we think the models as equivalent (definition left to the modeller). Three probabilities:
+- `\(P(AUC_1 \gg AUC_2)\)`
 
-- Correlated t-test (Benavoli et al., 2017): _the probability of the bayesian t-test and p-value of the frequentist t-test are numerically equivalent_.
+- `\(P(AUC_1 \approx AUC_2)\)` 
 
-- ANOVA with random intercepts: [tidyposterior](https://tidymodels.github.io/tidyposterior/index.html) and [Max Kuhn talk](https://www.youtube.com/watch?v=MJdsnJCWIuA&amp;t=853s).
-Output: we obtain posterior distributions of the metric, and posterior distributions of the metric differences.
-
-
----
-
-## Practical differences
-
-.middle[
-  
-  - Region of practical equivalence (ROPE): range of values of the metrics’ difference where we think the models as equivalent (definition left to the modeller).
-
-- Classification: classifiers whose difference in metric (auc, accuracy, f1) is less than 1% are usually thought as equivalent. The ROPE is then [-0.01, 0.01].
-
-]
-
-
----
-
-## Practical differences regions
-
-
-Three probabilities:
-- `\(P(m1 &gt;&gt; m2)\)`
-
-- `\(P(m1 = m2)\)` (practically)
-
-- `\(P(m1 &lt;&lt; m2)\)`
+- `\(P(AUC_1 \ll AUC_2)\)`
 
 
 
   ![](images/rope.png)
-
-
----
-
-## Bayesian pitfalls
-
-- Choosing priors
-
-- Defining ROPE
-
-- End up thinking black and white-ish.
 
 
 ---
@@ -383,9 +346,9 @@ summary(bayesian_comparison, size = 0.01) %&gt;%
 ## # A tibble: 3 x 4
 ##   contrast                     pract_neg pract_equiv pract_pos
 ##   &lt;chr&gt;                            &lt;dbl&gt;       &lt;dbl&gt;     &lt;dbl&gt;
-## 1 roc_auc_lasso vs roc_auc_rf      0.978      0.0222     0    
-## 2 roc_auc_xgb vs roc_auc_lasso     0          0.0005     1.000
-## 3 roc_auc_xgb vs roc_auc_rf        0          0.855      0.145
+## 1 roc_auc_lasso vs roc_auc_rf      0.973       0.027     0    
+## 2 roc_auc_xgb vs roc_auc_lasso     0           0         1    
+## 3 roc_auc_xgb vs roc_auc_rf        0           0.854     0.146
 ```
 
 ```r
@@ -398,9 +361,9 @@ summary(bayesian_comparison, size = 0.03) %&gt;%
 ## # A tibble: 3 x 4
 ##   contrast                     pract_neg pract_equiv pract_pos
 ##   &lt;chr&gt;                            &lt;dbl&gt;       &lt;dbl&gt;     &lt;dbl&gt;
-## 1 roc_auc_lasso vs roc_auc_rf          0       1        0     
-## 2 roc_auc_xgb vs roc_auc_lasso         0       0.992    0.0085
-## 3 roc_auc_xgb vs roc_auc_rf            0       1        0
+## 1 roc_auc_lasso vs roc_auc_rf    0.00025       1.000   0      
+## 2 roc_auc_xgb vs roc_auc_lasso   0             0.993   0.00725
+## 3 roc_auc_xgb vs roc_auc_rf      0             1       0
 ```
 ---
 
@@ -410,7 +373,7 @@ summary(bayesian_comparison, size = 0.03) %&gt;%
 ggplot(bayesian_comparison, size = 0.01)
 ```
 
-![](slides_files/figure-html/unnamed-chunk-10-1.png)&lt;!-- --&gt;
+![](slides_files/figure-html/unnamed-chunk-11-1.png)&lt;!-- --&gt;
 
 ---
 
@@ -420,13 +383,33 @@ ggplot(bayesian_comparison, size = 0.01)
 ggplot(bayesian_comparison, size = 0.03)
 ```
 
-![](slides_files/figure-html/unnamed-chunk-11-1.png)&lt;!-- --&gt;
+![](slides_files/figure-html/unnamed-chunk-12-1.png)&lt;!-- --&gt;
 
+---
+
+## Bayesian pitfalls
+
+- Choosing priors.
+
+- Defining ROPE.
+
+- End up thinking black and white-ish.
+
+---
+
+## Conclusions
+
+$$ $$
+
+- Use cross-validation to compare models.
+
+$$ $$
+- Think about practical differences.
 
 ---
 
 
-## Thanks
+## Thanks and questions
 
 ![](images/tweet.png)
 
