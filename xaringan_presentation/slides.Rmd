@@ -109,9 +109,9 @@ Paired t-test that accounts for the correlation between samples (Nadeau and Beng
 
 $$auc = b_0 + b_1 m_1 + b_2 m_2$$
 
-- Uses models to compare models.
-
 - Can compare multiple models.
+
+- Uses models to compare models.
 
 - Doesn't account for correlation.
 
@@ -184,7 +184,6 @@ Methods:
 - Correlated t-test (Benavoli et al., 2017): _the probability of the bayesian t-test and p-value of the frequentist t-test are numerically equivalent_.
 
 - ANOVA with random intercepts: [tidyposterior](https://tidymodels.github.io/tidyposterior/index.html) and [Max Kuhn talk](https://www.youtube.com/watch?v=MJdsnJCWIuA&t=853s).
-Output: we obtain posterior distributions of the metric, and posterior distributions of the metric differences.
 
 ---
 class: center, middle
