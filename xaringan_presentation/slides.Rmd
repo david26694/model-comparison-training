@@ -15,14 +15,11 @@ output:
       
 ---
 
-## Introduction
-
+## Contents
 
 - Problem description and approach
 
 - Frequentist and bayesian methods
-
-- Criticism
 
 - tidyposterior examples
 
